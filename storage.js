@@ -1,0 +1,6 @@
+const DB='varsity-two-sport-db';const STORE='snapshots';const KEY='current';const LEGACY='varsity-two-sport-v1';
+function open(){return new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>request.result.createObjectStore(STORE);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
+async function read(){const db=await open();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),request=tx.objectStore(STORE).get(KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}finally{db.close()}}
+export async function loadState(){try{const stored=await read();if(stored)return stored}catch{}try{return JSON.parse(localStorage.getItem(LEGACY)||'null')}catch{return null}}
+let pending=Promise.resolve();
+export function persistState(value){const snapshot=structuredClone(value);pending=pending.catch(()=>{}).then(async()=>{try{const db=await open();try{await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(snapshot,KEY);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}finally{db.close()}}catch(error){localStorage.setItem(LEGACY,JSON.stringify(snapshot))}});return pending}
