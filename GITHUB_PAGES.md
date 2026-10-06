@@ -3,7 +3,7 @@
 Varsity is a static site. GitHub Pages does not need `npm start`, Node, or a build step.
 
 1. On GitHub, create a **new repository** named `varsity-two-sport`. A public repository is simplest. Keep it separate from Health Quest.
-2. Open the repository, choose **Add file → Upload files**, and upload the **contents** of this `two-sport` folder to the repository root. The essential site files are `index.html`, `app.js`, `core.js`, `analytics.js`, `career.js`, `storage.js`, `schedule.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icon.svg`, and `.nojekyll`. The README, tests, package file, and local server are optional. Make sure `index.html` is at the root, not inside an uploaded `two-sport` folder.
+2. Open the repository, choose **Add file → Upload files**, and upload the **contents** of this `two-sport` folder to the repository root. The essential site files are `index.html`, `app.js`, `core.js`, `analytics.js`, `career.js`, `strength.js`, `strength-ui.js`, `progression.js`, `storage.js`, `schedule.js`, `style.css`, `sw.js`, `manifest.webmanifest`, `icon.svg`, and `.nojekyll`. The README, tests, package file, and local server are optional. Make sure `index.html` is at the root, not inside an uploaded `two-sport` folder.
 3. Commit the upload. Go to **Settings → Pages**. Under **Build and deployment**, choose **Deploy from a branch**, `main`, and `/(root)`, then **Save**.
 4. When Pages shows the published URL, open `https://YOUR-USERNAME.github.io/varsity-two-sport/` in Safari on your iPhone.
 5. In Safari, tap **Share → Add to Home Screen**, turn on **Open as Web App** if shown, then tap **Add**.

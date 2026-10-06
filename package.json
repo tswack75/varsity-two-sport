@@ -1,1 +1,1 @@
-{"name":"varsity-two-sport","version":"1.0.0","type":"module","private":true,"scripts":{"test":"node --test","start":"node server.js"}}
+{"name":"varsity-two-sport","version":"1.1.0","type":"module","private":true,"scripts":{"test":"node --test","start":"node server.js"}}

@@ -3,7 +3,7 @@ const STORE='snapshots';
 const KEY='current';
 const LEGACY='varsity-two-sport-v1';
 const JOURNAL='varsity-two-sport-journal-v1';
-const SMALL_KEYS=['healthData','mealData','workouts','strengthLogs','weightHistory','scheduleData','simulatedGames','athleteProfile','xpHistory','achievements','experiments','analyticsResults','settings'];
+const SMALL_KEYS=['healthData','mealData','workouts','strengthLogs','strengthDrafts','personalRecords','weightHistory','scheduleData','simulatedGames','athleteProfile','xpHistory','achievements','experiments','analyticsResults','settings'];
 
 function open(){return new Promise((resolve,reject)=>{const request=indexedDB.open(DB,1);request.onupgradeneeded=()=>request.result.createObjectStore(STORE);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}
 async function read(){const db=await open();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readonly'),request=tx.objectStore(STORE).get(KEY);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)})}finally{db.close()}}
