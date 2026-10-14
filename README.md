@@ -1,25 +1,16 @@
-# Varsity: Two-Sport Career
+# Varsity Fitness Tracker
 
-A new local-first PWA combining quick fitness logging with a fictional Michigan football and men's basketball career. It has its own storage key (`varsity-two-sport-v1`) and does not modify Health Quest.
+Varsity is a local-first PWA for weight, steps, active calories, workouts, and measurable progress. This update keeps the existing storage identity and full state. Older meal, Health Quest, schedule, game, athlete, experiment, and achievement records stay in backups but are retired from the everyday interface.
 
-## Run and install
+## Use
 
-Requires Node 20+. From this folder run `npm start`, then open `http://localhost:4173`. The browser's install control can install the PWA. Run `npm test` for logic tests. Opening `index.html` directly is unsupported because service workers require a local server.
+- **Today:** Enter weight, steps, and active calories; select a workout or None. Each field saves locally as you enter it. A workout selection is a plan until you complete the workout in Workouts. Other has an optional description and duration.
+- **Workouts:** Blue and Maize complete the two-workout weekly goal. White is optional. Enter individual set weights and reps, request progression with `+`, then tap Complete. The LAST card shows the most recent completed sets, including a workout completed today. Exercise names, targets, and notes are editable.
+- **Progression:** Review weight readings and seven-day trend, movement against the 8,000-step goal, weekly workout consistency, and exercise weight, reps, volume, and PRs. Choose 30D, 90D, 6M, or ALL.
+- **Data & settings:** Export all stored data, restore older Varsity backups after confirmation, and import Health Quest exports without duplicate imports. Keep a backup before changing devices or clearing browser data.
 
-## Model and privacy
+The app requires no backend. Install it from its served URL. To run locally, use Node 20+ and `npm start`, then open `http://localhost:4173`. Run `npm test` for the logic and persistence tests. The service worker caches the active app files for offline use.
 
-The app stores health data, meals, workouts, strength logs, weights, schedules, simulations, athlete profile, XP, achievements, experiments, analytics, imported Health Quest exports, and settings in a versioned local state in IndexedDB. It migrates the first build's `varsity-two-sport-v1` localStorage state automatically. A small localStorage journal records native entries synchronously as they are typed or tapped, then full IndexedDB snapshots follow. The journal does not include the imported Health Quest file. localStorage is also a fallback if IndexedDB is unavailable. Core features need no backend. The service worker caches the app shell for offline use. Export All Data produces a full JSON backup with schema, version, and timestamp. Import App Backup restores it. Clearing browser storage removes local data, so keep a backup.
+The IndexedDB database remains `varsity-two-sport-db` with the same `snapshots/current` record. The localStorage journal and older fallback keys are unchanged. Backup schema version remains 1; new optional fields are added without dropping older fields. Imported Health Quest source files remain in the state and are included in full backups.
 
-The food scale is Great (intentional quality and quantity), Good (controlled with one imperfect area), Drift (meaningful quality or quantity slip), and Off Track (multiple issues or loss of control). Night Snack also permits No Snack. A deliberate snack when hungry scores well. Meal weights start at 12%, 23%, 15%, 35%, 15%. These are fixed defaults; small samples never rewrite them.
-
-8,000 steps earn the full movement reward. Blue and Maize are the two core gym sessions and complete the weekly strength target. White is an optional third session with a modest bonus; skipping it has no penalty. Home Blue and Home Maize are 15-minute continuity options. All gym plans remain editable.
-
-Training shows each exercise's target, last completed sets, and today's recommendation. Enter weight and reps for each set; entries save locally as you type, even before completing a workout. Tap **+ Progress next time** to request an increase. The next session recommends more weight only when all recorded sets reach the top of the target range; otherwise it recommends building reps. Completing a workout records the sets, personal records, and earned XP. The Progression tab shows weight and readiness trends, strength history, and PRs. The game attributes are fictional and cannot be interpreted as medical assessments. Daily logging, target adherence, training, and a weekly experiment yield XP; excess exercise and rapid weight loss give no extra XP.
-
-## Health Quest and analytics
-
-Import a Health Quest JSON export in onboarding or Settings. The original export is retained untouched under its SHA-256 hash and normalized dated records support weight history, meals, steps, activity, and strength history. Health Quest meal ratings run from 1 (best) to 5 (worst), so import maps them to Varsity's opposite 4-to-1 scale. Health Quest 0 means not applicable for daytime meals and is omitted; an explicitly recorded night-snack 0 means no snack. Older nights without an explicit rating remain unknown. Reimporting the identical export does nothing. Overlapping dated records are deduplicated in analytics, with native Varsity values taking priority. The scouting report compares nearby weights with readings 2–4 days later. It waits for at least 14 paired observations and five days in each comparison group before displaying an association. It labels confidence conservatively and never treats association as causation. Weight charts show daily points under a seven-day rolling trend. The weekly experiment uses a supported opportunity when one exists, then stays fixed for the week unless you change it.
-
-## Schedules and career
-
-The remote schedule provider tries ESPN public JSON and falls back to saved manual or cached games. Schedule import accepts an array or `{ "games": [...] }`, with date, opponent, sport, venue, and optional strength. Manual entry works offline. Refresh requires internet and records its update time. Actual Michigan schedules may be used. **ALL game results, player statistics, awards, career outcomes, readiness effects, and team outcomes generated here are fictional.** Simulations use a deterministic seed and persist their first result. The optional detail view reveals inputs and modifiers.
+Historical workout selections from older Varsity versions were saved as completed workout values. Their original meaning cannot be recovered more precisely, so they continue to appear as completed history. New selections are stored separately and count only after workout completion.
