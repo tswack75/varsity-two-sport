@@ -1,3 +1,4 @@
+import {isCustomWorkout,validateTemplate,categories} from './custom-workouts.js';
 import {APP_VERSION, dateKey, initialState, MEALS, normalizeHealthQuest} from './core.js';
 import {dailyRecords} from './analytics.js';
 import {canonicalExercise, ensureStrengthState, normalizeStrengthLog} from './strength.js';
@@ -59,16 +60,22 @@ function varsityDays(source) {
 
 function sessions(source, format) {
   const records = [];
-  const add = (date, type) => {
-    if (validDate(date) && workouts.includes(type)) records.push({date, type, completed: true});
+  const add = (date, type, item = {}) => {
+    if (!validDate(date) || (!workouts.includes(type) && !isCustomWorkout(type))) return;
+    const result = {date,type,completed:true};
+    if (typeof item.workoutName === 'string') result.workoutName=item.workoutName;
+    if (typeof item.completedAt === 'string') result.completedAt=item.completedAt;
+    if (Object.hasOwn(categories,item.category)) result.category=item.category;
+    if (number(item.durationMinutes) !== null) result.durationMinutes=number(item.durationMinutes);
+    records.push(result);
   };
   if (format === 'Varsity') {
     for (const [date, type] of Object.entries(source.workouts ?? {})) add(date, type);
     for (const item of Object.values(source.completedWorkoutSessions ?? {})) {
-      if (item?.completed === true) add(item.date, item.type);
+      if (item?.completed === true) add(item.date, item.type, item);
     }
   } else if (Array.isArray(source.strengthHistory)) {
-    for (const item of source.strengthHistory) if (item?.completed === true) add(item.date, 'other');
+    for (const item of source.strengthHistory) if (item?.completed === true) add(item.date, 'other', item);
   }
   return [...new Map(records.map(item => [`${item.date}:${item.type}`, item])).values()];
 }
@@ -98,7 +105,10 @@ function normalize(source, format) {
       .filter(row => Object.keys(row).some(key => metrics.includes(key)) || Object.keys(row.meals).length || row.extraSnacks?.length),
     strengthSessions: [...sessions(source, format), ...nested.flatMap(batch => (Array.isArray(batch.strengthSessions)
       ? batch.strengthSessions.filter(item => item?.completed === true && validDate(item.date)).map(item => ({
-        date: item.date, type: workouts.includes(item.type) ? item.type : 'other', completed: true
+        date: item.date, type: workouts.includes(item.type)||isCustomWorkout(item.type) ? item.type : 'other', completed: true,
+        workoutName: typeof item.workoutName==='string'?item.workoutName:null,
+        category: Object.hasOwn(categories,item.category)?item.category:null,durationMinutes:number(item.durationMinutes),
+        completedAt:typeof item.completedAt==='string'?item.completedAt:null
       })) : []))],
     strengthLogs: [...strength(source), ...nested.flatMap(strength)]
   };
@@ -174,8 +184,8 @@ export function mergeImport(state, preview, {retainUnsupported = false} = {}) {
 }
 
 const mapFields = ['healthData', 'mealData', 'weightHistory', 'extraSnacks', 'deletedSnackIds', 'workouts', 'workoutDetails',
-  'workoutSelections', 'completedWorkoutSessions', 'strengthDrafts', 'importedHealthQuestData', 'importedHistory', 'settings'];
-const arrayFields = ['strengthLogs', 'personalRecords'];
+  'workoutSelections', 'customWorkouts', 'customSessionPlans', 'completedWorkoutSessions', 'strengthDrafts', 'importedHealthQuestData', 'importedHistory', 'settings'];
+const arrayFields = ['strengthLogs', 'personalRecords', 'recommendationHistory'];
 
 export function restoreBackup(raw) {
   if (raw?.schemaVersion !== 1 || !object(raw.state) || classify(raw).format !== 'Varsity') {
@@ -201,6 +211,11 @@ export function restoreBackup(raw) {
       throw Error('Invalid workout program');
     }
   }
+  for (const [key,value] of Object.entries(source.customWorkouts ?? {})) {
+    if (!isCustomWorkout(key)) throw Error('Invalid custom workout identifier');
+    validateTemplate(value);
+  }
+  for (const value of Object.values(source.customSessionPlans ?? {})) validateTemplate(value);
   return ensureStrengthState({...initialState(), ...structuredClone(source)});
 }
 
