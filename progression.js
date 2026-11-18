@@ -7,7 +7,18 @@ const epoch=date=>new Date(`${date}T12:00:00Z`).getTime();
 const iso=ms=>new Date(ms).toISOString().slice(0,10);
 const mean=values=>values.reduce((a,b)=>a+b,0)/values.length;
 const displayDate=date=>new Date(`${date}T12:00:00`).toLocaleDateString(undefined,{month:'short',day:'numeric'});
-export function smoothSeries(points,days=7){return points.map(point=>{const values=points.filter(other=>other.date<=point.date&&epoch(other.date)>=epoch(point.date)-(days-1)*dayMs).map(other=>other.value);return {...point,trend:mean(values)}})}
+export function smoothSeries(points, days=7) {
+  const samples = points.map(point => ({date:epoch(point.date),value:point.value})).sort((a,b)=>a.date-b.date);
+  const averages = new Map();
+  let left=0, right=0, sum=0;
+  while (right<samples.length) {
+    const date=samples[right].date;
+    while (left<right && date-samples[left].date>(days-1)*dayMs) sum-=samples[left++].value;
+    do { sum+=samples[right++].value; } while (right<samples.length && samples[right].date===date);
+    averages.set(date,sum/(right-left));
+  }
+  return points.map(point=>({...point,trend:averages.get(epoch(point.date))}));
+}
 export function weightProgressSeries(state){return smoothSeries(dailyRecords(state).filter(row=>row.weight!==null).map(row=>({date:row.date,value:row.weight})),7)}
 export function readinessProgressSeries(state){const dates=[...new Set([...Object.keys(state.healthData||{}),...Object.keys(state.mealData||{}),...Object.keys(state.workouts||{})])].sort();return smoothSeries(dates.map(date=>({date,value:readiness(state,date)})),7)}
 export function dateDomain(range,today,series=[]){const end=epoch(today),start=range==='ALL'?Math.min(end,...series.map(point=>epoch(point.date))):end-({ '30D':29,'90D':89,'6M':182 }[range]??29)*dayMs;return {start:iso(start),end:today}}

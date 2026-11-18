@@ -15,6 +15,14 @@ The IndexedDB database remains `varsity-two-sport-db` with the same `snapshots/c
 
 Use **My workouts** to create a template or adjust one workout date independently. Variants with distinct loading conventions have separate IDs. Forms show earlier sets as suggestions. Mark each set **Performed** before completing a custom workout. Deleting a template leaves completed sessions and exercise history in the app and in exports.
 
+Open **Progression → Compare / Overlay** to compare metrics on a shared calendar
+axis. Each series starts at index 100 on its first valid date in the selected
+range. Its original baseline and units appear in the legend, and tapping the
+chart or using the date control shows its actual observations. A zero starting
+value is labelled as incompatible. **How comparison works** documents the
+smoothing windows and treatment of missing data. Selections and display modes
+are saved locally.
+
 See [exercise demonstration coverage](EXERCISE_GUIDES.md) and the [analysis and recommendations formats](FITNESS_ANALYSIS.md). The analysis export is a separate, locally generated file. Settings previews and applies only the recommendation changes you select.
 
 Historical workout selections from older Varsity versions were saved as completed workout values. Their original meaning cannot be recovered more precisely, so they continue to appear as completed history. New selections are stored separately and count only after workout completion.
