@@ -32,6 +32,10 @@ test('LAST regression: completed sets and + survive persistent reload and appear
     assert.match(formatSets(press),/65 lb × 8/);assert.match(formatSets(row),/80 lb × 10/);assert.equal(press.progressRequested,true);
     const html=exerciseCard(restored,day,'blue','Chest press','3 × 6–10','machine or dumbbell',0,value=>String(value));
     assert.match(html,/LAST Oct 14/);assert.match(html,/70 lb × 10 · 70 lb × 9 · 65 lb × 8/);assert.match(html,/PROGRESSION REQUESTED \+/);
+    const next = exerciseCard(restored,'2026-10-19','blue','Chest press','3 × 6–10','machine or dumbbell',0,String);
+    assert.match(next,/LAST Oct 14/);
+    assert.match(next,/70 lb × 10 · 70 lb × 9 · 65 lb × 8/);
+    assert.match(next,/PROGRESSION REQUESTED \+/);
     assert.equal(restored.completedWorkoutSessions[`${day}:blue`].completed,true);assert.equal(weeklyStrength(restored,day).blue,true);
     toggleProgressRequest(restored,day,'blue','Chest press');assert.equal(lastExercise(restored,'Chest press',day).progressRequested,false);
     toggleProgressRequest(restored,day,'blue','Chest press');assert.equal(lastExercise(restored,'Chest press',day).progressRequested,true);
