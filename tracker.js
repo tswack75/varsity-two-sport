@@ -1,4 +1,4 @@
-import {dateKey,weekKey,weeklyStrength} from './core.js';
+import {importedWorkoutTypes,dateKey,weekKey,weeklyStrength} from './core.js';
 import {dailyRecords} from './analytics.js';
 
 export const STEP_GOAL=8000;
@@ -26,6 +26,7 @@ export function completedTypes(state,date){
   const types=new Set();
   const legacy=state.workouts?.[date];if(legacy&&legacy!=='none'&&legacy!=='rest')types.add(legacy);
   for(const session of Object.values(state.completedWorkoutSessions||{}))if(session?.date===date&&session.completed)types.add(session.type);
+  for (const type of importedWorkoutTypes(state, date)) types.add(type);
   return [...types];
 }
 export function weeklyTracker(state,date){

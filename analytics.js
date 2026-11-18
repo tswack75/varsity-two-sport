@@ -1,7 +1,57 @@
-import {MEALS,mealScore,weekKey,trend} from './core.js';
+import {historyBatches,MEALS,mealScore,weekKey,trend} from './core.js';
 
 const finite=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v):null;
-export function dailyRecords(state){const rows=new Map();const imports=Object.values(state.importedHealthQuestData||{}).sort((a,b)=>String(a.importedAt).localeCompare(String(b.importedAt)));for(const batch of imports){for(const item of batch.normalized||[])rows.set(item.date,{...rows.get(item.date),...item,meals:{...rows.get(item.date)?.meals,...item.meals},source:'Health Quest'});for(const session of batch.strengthSessions||[])if(session.completed){const old=rows.get(session.date)||{date:session.date};rows.set(session.date,{...old,strength:true})}}for(const [date,h] of Object.entries(state.healthData||{})){const old=rows.get(date)||{date};rows.set(date,{...old,...h,meals:{...old.meals,...state.mealData?.[date]},source:'Varsity'})}for(const [date,meals] of Object.entries(state.mealData||{})){const old=rows.get(date)||{date};rows.set(date,{...old,meals:{...old.meals,...meals},source:'Varsity'})}for(const [date,weight] of Object.entries(state.weightHistory||{})){const old=rows.get(date)||{date};rows.set(date,{...old,weight,source:'Varsity'})}for(const [date,workout] of Object.entries(state.workouts||{})){const old=rows.get(date)||{date};rows.set(date,{...old,strength:['blue','maize','home'].includes(workout)})}const records=[...rows.values()].sort((a,b)=>a.date.localeCompare(b.date));const strengthByWeek=new Map();for(const row of records)if(row.strength===true)strengthByWeek.set(weekKey(row.date),(strengthByWeek.get(weekKey(row.date))||0)+1);return records.map(row=>({...row,weight:finite(row.weight),steps:finite(row.steps),activeCalories:finite(row.activeCalories),nutrition:mealScore(row.meals),weeklyStrength:(strengthByWeek.get(weekKey(row.date))||0)>=2}))}
+export function dailyRecords(state) {
+  const rows = new Map();
+  const get = date => {
+    if (!rows.has(date)) rows.set(date, {date, meals: {}, extraSnacks: []});
+    return rows.get(date);
+  };
+  const metrics = ['weight', 'bodyFat', 'steps', 'activeCalories', 'exerciseMinutes'];
+  const snackIds = new Set(Object.keys(state.deletedSnackIds ?? {}));
+  for (const [date, snacks] of Object.entries(state.extraSnacks ?? {})) {
+    if (!Array.isArray(snacks)) continue;
+    for (const snack of snacks) {
+      if (!snack?.id || snackIds.has(snack.id)) continue;
+      get(date).extraSnacks.push(snack);
+      snackIds.add(snack.id);
+    }
+  }
+  for (const batch of historyBatches(state)) {
+    for (const item of batch.normalized ?? []) {
+      const row = get(item.date);
+      row.source ??= batch.format;
+      for (const key of metrics) if (item[key] != null) row[key] ??= item[key];
+      for (const [key, value] of Object.entries(item.meals ?? {})) if (value != null) row.meals[key] ??= value;
+      for (const snack of item.extraSnacks ?? []) {
+        if (snackIds.has(snack.id)) continue;
+        row.extraSnacks.push(snack);
+        snackIds.add(snack.id);
+      }
+    }
+    for (const session of batch.strengthSessions ?? []) if (session.completed) get(session.date).strength = true;
+  }
+  for (const [date, health] of Object.entries(state.healthData ?? {})) {
+    const row = get(date);
+    for (const key of metrics) if (Object.hasOwn(health, key)) row[key] = health[key];
+    row.source = 'Varsity';
+  }
+  for (const [date, meals] of Object.entries(state.mealData ?? {})) Object.assign(get(date).meals, meals);
+  for (const [date, weight] of Object.entries(state.weightHistory ?? {})) {
+    if (!Object.hasOwn(state.healthData?.[date] ?? {}, 'weight')) get(date).weight = weight;
+  }
+  for (const [date, type] of Object.entries(state.workouts ?? {})) {
+    if (['blue', 'maize', 'home'].includes(type)) get(date).strength = true;
+  }
+  const strengthByWeek = new Map();
+  for (const row of rows.values()) {
+    if (row.strength) strengthByWeek.set(weekKey(row.date), (strengthByWeek.get(weekKey(row.date)) ?? 0) + 1);
+  }
+  return [...rows.values()].sort((a, b) => a.date.localeCompare(b.date)).map(row => ({
+    ...row, weight: finite(row.weight), steps: finite(row.steps), activeCalories: finite(row.activeCalories),
+    nutrition: mealScore(row.meals), weeklyStrength: (strengthByWeek.get(weekKey(row.date)) ?? 0) >= 2
+  }));
+}
 const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
 export function weightSeries(state){const rows=dailyRecords(state).filter(x=>x.weight!==null).map(x=>({date:x.date,value:x.weight}));return trend(rows,7)}
 function datePlus(date,n){const d=new Date(`${date}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
