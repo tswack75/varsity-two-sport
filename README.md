@@ -13,6 +13,10 @@ The app requires no backend. Install it from its served URL. To run locally, use
 
 The IndexedDB database remains `varsity-two-sport-db` with the same `snapshots/current` record. The localStorage journal and older fallback keys are unchanged. Backup schema version remains 1; new optional fields are added without dropping older fields. Imported Health Quest source files remain in the state and are included in full backups.
 
+Use **My workouts** to create a template or adjust one workout date independently. Variants with distinct loading conventions have separate IDs. Forms show earlier sets as suggestions. Mark each set **Performed** before completing a custom workout. Deleting a template leaves completed sessions and exercise history in the app and in exports.
+
+See [exercise demonstration coverage](EXERCISE_GUIDES.md) and the [analysis and recommendations formats](FITNESS_ANALYSIS.md). The analysis export is a separate, locally generated file. Settings previews and applies only the recommendation changes you select.
+
 Historical workout selections from older Varsity versions were saved as completed workout values. Their original meaning cannot be recovered more precisely, so they continue to appear as completed history. New selections are stored separately and count only after workout completion.
 
 ## Historical imports

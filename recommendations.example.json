@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "2.2.0",
+  "notes": "Synthetic example. A change needs a rationale tied to your own records before you accept it.",
+  "changes": [
+    {
+      "op": "setting",
+      "target": "stepGoal",
+      "value": 8500,
+      "reason": "Illustrates an incremental goal change after reviewing the recent step distribution."
+    },
+    {
+      "op": "weightIncrement",
+      "target": "incline-dumbbell-press",
+      "value": 2.5,
+      "reason": "Illustrates equipment with 2.5 lb increments per dumbbell."
+    },
+    {
+      "op": "newWorkout",
+      "value": {
+        "name": "Hotel Gym",
+        "description": "Example supplemental session",
+        "category": "other",
+        "exercises": [
+          { "exerciseId": "incline-dumbbell-press", "sets": 3, "min": 6, "max": 10 },
+          { "exerciseId": "dumbbell-chest-supported-row", "sets": 3, "min": 8, "max": 12 }
+        ]
+      }
+    }
+  ]
+}

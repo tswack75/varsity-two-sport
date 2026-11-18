@@ -1,7 +1,9 @@
+import {isCustomWorkout} from './custom-workouts.js';
 import {importedWorkoutTypes,dateKey,weekKey,weeklyStrength} from './core.js';
 import {dailyRecords} from './analytics.js';
 
 export const STEP_GOAL=8000;
+export const stepGoal=state=>state.settings?.stepGoal??STEP_GOAL;
 export function setDailyHealth(state,date,field,value){
   if(!['weight','steps','activeCalories'].includes(field))throw Error('Unknown daily field');
   state.healthData??={};state.healthData[date]??={};
@@ -12,7 +14,7 @@ export function setDailyHealth(state,date,field,value){
   return number;
 }
 export function selectWorkout(state,date,type){
-  if(!['none','blue','maize','white','other'].includes(type))throw Error('Unknown workout');
+  if(!['none','blue','maize','white','other'].includes(type)&&!(isCustomWorkout(type)&&Object.hasOwn(state.customWorkouts??{},type)))throw Error('Unknown workout');
   state.workoutSelections??={};state.workoutSelections[date]=type;
   return type;
 }
@@ -31,7 +33,7 @@ export function completedTypes(state,date){
 }
 export function weeklyTracker(state,date){
   const week=weekKey(date),rows=dailyRecords(state).filter(row=>weekKey(row.date)===week&&row.date<=date);
-  const stepDays=rows.filter(row=>row.steps>=STEP_GOAL).length;
+  const stepDays=rows.filter(row=>row.steps>=stepGoal(state)).length;
   const strength=weeklyStrength(state,date);
   return {stepDays,strength,trainingPercent:(Number(strength.blue)+Number(strength.maize))*50};
 }
