@@ -76,7 +76,7 @@ function write(state,{op,target},value) {
 
 export function previewRecommendations(state, file) {
   if (!only(file,['schemaVersion','appVersion','changes','notes']) || file.schemaVersion !== 1
-    || ![APP_VERSION,'2.2.0'].includes(file.appVersion) || !Array.isArray(file.changes) || !file.changes.length || file.changes.length > 30
+    || ![APP_VERSION,'2.2.1','2.2.0'].includes(file.appVersion) || !Array.isArray(file.changes) || !file.changes.length || file.changes.length > 30
     || (file.notes !== undefined && !shortText(file.notes,4000))) {
     throw Error(`Use recommendations schema 1 for Varsity ${APP_VERSION}.`);
   }

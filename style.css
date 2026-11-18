@@ -29,8 +29,17 @@
 .overlay-panel[hidden]{display:none}
 .overlay-bar{margin-bottom:1rem}
 .overlay-layout{display:grid;gap:.85rem}
-.overlay-picker select,.overlay-legend select{min-height:44px}
-.overlay-picker button,.overlay-legend button,.overlay-bar button{min-height:44px}
+.overlay-picker select,.overlay-picker button,.overlay-bar button{min-height:44px}
+.overlay-picker>p{margin:0 0 .45rem}
+.overlay-group{margin:.35rem 0}
+.overlay-group summary{min-height:44px;align-content:center}
+.overlay-control-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.45rem;padding:.25rem 0}
+.overlay-switch{display:flex;align-items:center;gap:.45rem;min-height:44px;cursor:pointer;min-width:0}
+.overlay-switch input{width:1.2rem;height:1.2rem;min-height:0;flex:none;accent-color:#f6c849}
+.overlay-switch span{overflow-wrap:anywhere}
+.overlay-switch small{white-space:nowrap}
+.overlay-switch input:checked~small{color:#f6c849}
+.overlay-picker fieldset{min-inline-size:0;margin:.5rem 0}
 .overlay-figure{margin:0;min-width:0}
 .overlay-svg{display:block;width:100%;max-width:620px;height:auto;margin-inline:auto;touch-action:pan-y}
 .overlay-figure label{margin-top:.5rem;display:grid;gap:.2rem}
@@ -41,6 +50,5 @@
 .overlay-reading small,.overlay-legend-item>small{display:block}
 .overlay-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:.55rem}
 .overlay-legend-item{min-width:0;padding:.65rem;border:1px solid #405474;border-radius:.65rem;overflow-wrap:anywhere}
-.overlay-legend-item label{display:flex;align-items:center;gap:.28rem}
 .overlay-legend i,.overlay-reading i{display:inline-block;width:.75rem;height:.75rem;margin-inline-end:.4rem;border-radius:50%;background:var(--overlay-color)}
 

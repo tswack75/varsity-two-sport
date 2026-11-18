@@ -15,8 +15,9 @@ The IndexedDB database remains `varsity-two-sport-db` with the same `snapshots/c
 
 Use **My workouts** to create a template or adjust one workout date independently. Variants with distinct loading conventions have separate IDs. Forms show earlier sets as suggestions. Mark each set **Performed** before completing a custom workout. Deleting a template leaves completed sessions and exercise history in the app and in exports.
 
-Open **Progression → Compare / Overlay** to compare metrics on a shared calendar
-axis. Each series starts at index 100 on its first valid date in the selected
+Open **Progression → Compare / Overlay** and turn on any metrics you want to
+compare. Choose Both, Trend, or Data points next to each toggle. All active
+metrics share a calendar axis. Each series starts at index 100 on its first valid date in the selected
 range. Its original baseline and units appear in the legend, and tapping the
 chart or using the date control shows its actual observations. A zero starting
 value is labelled as incompatible. **How comparison works** documents the
