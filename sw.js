@@ -1,4 +1,4 @@
-const CACHE='varsity-shell-v9';
+const CACHE='varsity-shell-v10';
 const ASSETS=['./','./index.html','./style.css','./app-simple.js','./food.js','./history-import.js','./data-settings.js','./exercise-library.js','./custom-workouts.js','./analysis-export.js','./recommendations.js','./tracker.js','./core.js','./analytics.js','./strength.js','./strength-ui.js','./progression.js','./progression-simple.js','./overlay-series.js','./overlay-chart.js','./storage.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('varsity-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

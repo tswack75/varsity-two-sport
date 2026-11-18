@@ -157,43 +157,73 @@ test('same-day exercise history uses actual sets and keeps timed results separat
   assert.match(carryReps.issue,/No observations/);
 });
 
-test('compare controls persist display, visibility, removal, reset and cleared state across reopens',async()=>{
+test('direct toggles plot several metrics together and persist independent modes across reopens',async()=>{
   const oldDocument=globalThis.document, oldStorage=globalThis.localStorage;
   const local=new Map(), attributes=new Map(), toggle={setAttribute:(key,value)=>attributes.set(key,value)};
-  const panel={querySelector:()=>null};
+  const marker={setAttribute(){}}, svg={querySelector:()=>marker};
+  const slider={setAttribute(){}}, tooltip={setAttribute(){}};
+  const panel={querySelectorAll:()=>[],querySelector(selector){
+    if(selector==='.overlay-svg')return this.innerHTML.includes('class="overlay-svg"')?svg:null;
+    if(selector==='[data-overlay-date]')return slider;
+    if(selector==='[data-overlay-tooltip]')return tooltip;
+    return null;
+  }};
   globalThis.document={querySelector:selector=>selector==='#overlay-toggle'?toggle:panel};
   globalThis.localStorage={getItem:key=>local.get(key)??null,setItem:(key,value)=>local.set(key,value)};
   try {
     let state=initialState(), pending;
-    const bind=()=>bindOverlays({state,day,rows:[],names:[exercise],range:'30D',save(render){
+    state.healthData['2026-11-03']={weight:180,steps:8000,activeCalories:400};
+    state.healthData['2026-11-04']={weight:182,steps:9000,activeCalories:500};
+    state.strengthLogs=exercises();
+    state.settings.progressionOverlay={open:false,items:[]};
+    const bind=()=>bindOverlays({state,day,rows:dailyRecords(state),names:[exercise,'Chest press'],range:'30D',save(render){
       assert.equal(render,false);
       pending=persistState(state);
     },esc:String});
-    const change=(dataset,value)=>panel.onchange({target:{dataset,value}});
-    const click=(overlayAction,index)=>panel.onclick({target:{dataset:{overlayAction,index}}});
+    const change=(dataset,value,checked)=>panel.onchange({target:{dataset,value,checked}});
+    const click=overlayAction=>panel.onclick({target:{dataset:{overlayAction}}});
+    const indexOf=label=>[...panel.innerHTML.matchAll(/data-overlay-toggle="(\d+)" aria-label="([^"]+)"([^>]*)/g)]
+      .find(match=>match[2]===label);
+    const setToggle=(label,checked)=>change({overlayToggle:indexOf(label)[1]},'on',checked);
+    const setMode=(label,value)=>change({overlayMode:indexOf(label)[1]},value);
+    const checked=label=>indexOf(label)[3].includes('checked');
+
     bind();
     assert.equal(panel.hidden,true);
     toggle.onclick();
     assert.equal(attributes.get('aria-expanded'),'true');
     assert.match(panel.innerHTML,/Normalized Comparison/);
-    change({overlayControl:'metric'},'exerciseWeight');
-    click('add');
-    change({overlayMode:'2'},'Points');
-    click('hide','1');
+    assert.doesNotMatch(panel.innerHTML,/Add metric/);
+    assert.match(panel.innerHTML,/>Data points</);
+    setToggle('Body weight',true);
+    setMode('Body weight','Trend');
+    setToggle('Steps',true);
+    setMode('Steps','Points');
+    setToggle('Active calories',true);
+    assert.ok(['Body weight','Steps','Active calories'].every(checked));
+    assert.equal((panel.innerHTML.match(/data-marks="trend"/g)??[]).length,2);
+    assert.equal((panel.innerHTML.match(/data-marks="points"/g)??[]).length,2);
+    assert.match(tooltip.innerHTML,/182 lb/);
+    assert.match(tooltip.innerHTML,/9,000 steps/);
+    assert.match(tooltip.innerHTML,/500 kcal/);
+    setToggle('Steps',false);
+    assert.equal(checked('Steps'),false);
+    assert.doesNotMatch(tooltip.innerHTML,/9,000 steps/);
     await pending;
     state=await loadState();
     bind();
-    assert.match(panel.innerHTML,/Incline dumbbell press · Working weight/);
-    assert.deepEqual(state.settings.progressionOverlay.items.map(x=>[x.metric,x.mode,x.hidden]),[
-      ['weight','Trend',false],['steps','Both',true],['exerciseWeight','Points',false]
-    ]);
-    click('remove','0');
-    assert.equal(state.settings.progressionOverlay.items.length,2);
+    assert.ok(checked('Body weight'));
+    assert.ok(checked('Active calories'));
+    setToggle('Steps',true);
+    assert.equal(state.settings.progressionOverlay.items.find(item=>item.metric==='steps').mode,'Points');
+    setToggle(`${exercise} · Working weight`,true);
+    change({overlayExercise:''},'Chest press');
+    assert.ok(checked(`${exercise} · Working weight`));
+    assert.ok(indexOf('Chest press · Working weight'));
+    assert.equal(checked('Chest press · Working weight'),false);
     click('clear');
-    await pending;
-    state=await loadState();
-    bind();
-    assert.match(panel.innerHTML,/Add a metric to compare/);
+    assert.match(panel.innerHTML,/Turn on metrics to compare/);
+    assert.ok(state.settings.progressionOverlay.items.every(item=>item.hidden));
     click('reset');
     assert.deepEqual(state.settings.progressionOverlay.items.map(x=>x.metric),['weight','steps']);
     toggle.onclick();

@@ -92,46 +92,79 @@ const info = `<details class="overlay-info"><summary>How comparison works</summa
   <p>Food logging shows the share of checkpoints recorded on days with at least one rating. Mean food ratings exclude No Snack. Nighttime eating is 1 for a rated snack and 0 for a recorded No Snack. Extra snacks are shown on dates with logged events.</p>
 </details>`;
 
+const groups = [
+  ['daily','Body and activity',['weight','bodyFat','steps','activeCalories','exerciseMinutes']],
+  ['workouts','Workouts',['workouts','workoutDuration']],
+  ['food','Food and snacks',Object.keys(metrics).filter(key=>key.startsWith('food') || ['extraSnacks','nightEating'].includes(key))]
+];
+const exerciseMetrics = Object.keys(metrics).filter(key=>metrics[key][2]==='exercise');
+
 export function bindOverlays({state,day,rows,names,range,save,esc}) {
   const toggle=document.querySelector('#overlay-toggle'), panel=document.querySelector('#overlay-panel');
   if (!toggle || !panel) return;
-  let config=overlayConfig(state.settings.progressionOverlay), addMetric='weight', addExercise=names[0]??'', inspectedDate=null;
+  let config=overlayConfig(state.settings.progressionOverlay), inspectedDate=null;
+  let exercise=names.includes(config.exercise)?config.exercise:names[0]??'';
   const domain=comparisonDomain(range,day,rows,state);
+  const opened=new Set(['daily']);
   const persist=()=>{
+    config.exercise=exercise;
     state.settings.progressionOverlay=config;
     save(false);
   };
+  let controls=[];
+  function control(metric,exerciseName) {
+    const item={metric,...(exerciseName?{exercise:exerciseName}:{})}, key=overlayKey(item);
+    const saved=config.items.find(entry=>overlayKey(entry)===key);
+    const index=controls.push(item)-1;
+    const on=Boolean(saved && !saved.hidden), mode=saved?.mode??'Both';
+    const title=metrics[metric][0], label=exerciseName?`${exerciseName} · ${title}`:title;
+    return `<div class="overlay-control-row">
+      <label class="overlay-switch"><input type="checkbox" data-overlay-toggle="${index}" aria-label="${esc(label)}" ${on?'checked':''}>
+        <span>${esc(title)}</span><small aria-hidden="true">${on?'On':'Off'}</small></label>
+      <select data-overlay-mode="${index}" aria-label="Display ${esc(label)}">
+        ${['Both',...displayModes.filter(choice=>choice!=='Both')].map(choice=>
+          `<option value="${choice}" ${choice===mode?'selected':''}>${choice==='Points'?'Data points':choice}</option>`).join('')}
+      </select></div>`;
+  }
   function draw(focus=null) {
+    for (const details of panel.querySelectorAll('[data-overlay-group]')) {
+      if (details.open) opened.add(details.dataset.overlayGroup);
+      else opened.delete(details.dataset.overlayGroup);
+    }
     toggle.setAttribute('aria-expanded',String(config.open));
     panel.hidden=!config.open;
     if (!config.open) { panel.innerHTML=''; return; }
-    const series=buildOverlays(state,rows,domain,config.items), plot=plotSeries(series,domain);
-    const draft={metric:addMetric,...(metrics[addMetric][2]==='exercise'?{exercise:addExercise}:{})};
-    const unavailable=metrics[addMetric][2]==='exercise'&&!addExercise;
-    const duplicate=config.items.some(item=>overlayKey(item)===overlayKey(draft));
-    panel.innerHTML=`<h2>Normalized Comparison</h2>
-      <div class="overlay-layout"><div class="overlay-picker">
-        <div class="fields"><label>Metric <select data-overlay-control="metric">
-          ${Object.entries(metrics).map(([key,[title]])=>`<option value="${key}" ${key===addMetric?'selected':''}>${title}</option>`).join('')}
-        </select></label>${metrics[addMetric][2]==='exercise'?`<label>Exercise <select data-overlay-control="exercise">
-          ${names.length?names.map(name=>`<option value="${esc(name)}" ${name===addExercise?'selected':''}>${esc(name)}</option>`).join(''):'<option value="">No exercises available</option>'}
-        </select></label>`:''}<button data-overlay-action="add" ${unavailable||duplicate?'disabled':''}>Add metric</button></div>
-        <div class="pills"><button data-overlay-action="clear" ${series.length?'':'disabled'}>Clear all</button><button data-overlay-action="reset">Reset defaults</button></div>
+    controls=[];
+    const active=config.items.filter(item=>!item.hidden);
+    const series=buildOverlays(state,rows,domain,active), plot=plotSeries(series,domain);
+    const section=(id,title,body)=>`<details class="overlay-group" data-overlay-group="${id}" ${opened.has(id)?'open':''}><summary>${title}</summary>${body}</details>`;
+    const renderGroup=([id,title,keys])=>section(id,title,keys.map(metric=>control(metric)).join(''));
+    const daily=renderGroup(groups[0]), additional=groups.slice(1).map(renderGroup).join('');
+    const current=exercise?section('exercise','Exercise performance',
+      `<label>Exercise <select data-overlay-exercise>${names.map(name=>
+        `<option value="${esc(name)}" ${name===exercise?'selected':''}>${esc(name)}</option>`).join('')}</select></label>
+      ${exerciseMetrics.map(metric=>control(metric,exercise)).join('')}`):'';
+    const others=[...new Map(config.items.filter(item=>item.exercise && overlayKey({...item,exercise})!==overlayKey(item))
+      .map(item=>[overlayKey({metric:'exerciseWeight',exercise:item.exercise}),item.exercise])).values()];
+    const otherControls=others.map(name=>`<fieldset><legend>${esc(name)}</legend>${exerciseMetrics.map(metric=>control(metric,name)).join('')}</fieldset>`).join('');
+    panel.innerHTML=`<h2>Normalized Comparison</h2><div class="overlay-layout">
+      <div class="overlay-picker"><p>Turn on the metrics you want to compare. Each has its own display setting.</p>
+        <div class="pills"><button data-overlay-action="clear" ${active.length?'':'disabled'}>Turn all off</button><button data-overlay-action="reset">Reset defaults</button></div>
+        ${daily}
       </div>
       ${plot.visible.length?`<figure class="overlay-figure">${overlaySvg(plot,domain)}
         <figcaption><small>Dashed line · 100 baseline</small><label>Inspect observation date
           <input type="range" min="0" max="${plot.sortedDates.length-1}" step="1" data-overlay-date>
         </label><div class="overlay-tooltip" data-overlay-tooltip></div></figcaption></figure>`:
-        `<p class="chart-empty">${series.length?'No visible metrics can be indexed in this range.':'Add a metric to compare readings over the selected dates.'}</p>`}
-      <div class="overlay-legend" aria-label="Comparison legend and display modes">${series.map((item,index)=>
+        `<p class="chart-empty">${series.length?'No selected metrics can be indexed in this range.':'Turn on metrics to compare readings over the selected dates.'}</p>`}
+      ${series.length?`<div class="overlay-legend" aria-label="Comparison legend">${series.map(item=>
         `<section class="overlay-legend-item"><strong><i style="--overlay-color:${color(item.color)}"></i>${esc(item.title)}</strong>
           ${item.baseline?`<small>Baseline ${fullDate.format(dateObject(item.baseline.date))} · ${esc(original(item.baseline.value,item.unit))}</small>`:''}
-          ${item.issue?`<p class="muted">${item.issue}</p>`:''}
-          <div class="pills"><label>Display <select data-overlay-mode="${index}" aria-label="Display ${esc(item.title)}">
-            ${displayModes.map(mode=>`<option ${mode===item.mode?'selected':''}>${mode}</option>`).join('')}
-          </select></label><button data-overlay-action="hide" data-index="${index}" aria-label="${item.hidden?'Show':'Hide'} ${esc(item.title)}">${item.hidden?'Show':'Hide'}</button>
-          <button data-overlay-action="remove" data-index="${index}" aria-label="Remove ${esc(item.title)}">Remove</button></div>
-        </section>`).join('')}</div>
+          ${item.issue?`<p class="muted">${item.issue}</p>`:''}</section>`).join('')}</div>`:''}
+      <div class="overlay-picker">
+        ${additional}
+        ${current}${otherControls?section('other-exercises','Other configured exercises',otherControls):''}
+      </div>
       ${info}</div>`;
     bindChart(panel,plot,domain,esc,inspectedDate,date=>{inspectedDate=date;});
     if (focus) panel.querySelector(focus)?.focus({preventScroll:true});
@@ -143,33 +176,32 @@ export function bindOverlays({state,day,rows,names,range,save,esc}) {
     draw();
   };
   panel.onchange=event=>{
-    const {overlayControl,overlayMode}=event.target.dataset, value=event.target.value;
-    if (overlayControl==='metric') addMetric=value;
-    else if (overlayControl==='exercise') addExercise=value;
-    else if (overlayMode!==undefined) {
-      config.items[Number(overlayMode)].mode=value;
+    const target=event.target, {overlayToggle,overlayMode,overlayExercise}=target.dataset;
+    if (overlayExercise!==undefined) {
+      if (!names.includes(target.value)) return;
+      exercise=target.value;
       persist();
-      draw(`[data-overlay-mode="${Number(overlayMode)}"]`);
+      draw('[data-overlay-exercise]');
       return;
-    } else return;
-    draw(`[data-overlay-control="${overlayControl}"]`);
+    }
+    const index=overlayToggle??overlayMode, controlItem=controls[Number(index)];
+    if (!controlItem) return;
+    const saved=config.items.find(item=>overlayKey(item)===overlayKey(controlItem));
+    const item=saved??{...controlItem,mode:'Both',hidden:true};
+    if (overlayToggle!==undefined) item.hidden=!target.checked;
+    else if (displayModes.includes(target.value)) item.mode=target.value;
+    else return;
+    if (!saved) config=overlayConfig({...config,items:[...config.items,item]});
+    persist();
+    draw(`[data-overlay-${overlayToggle!==undefined?'toggle':'mode'}="${index}"]`);
   };
   panel.onclick=event=>{
-    const {overlayAction:action,index}=event.target.dataset;
-    let focus='[data-overlay-control="metric"]';
-    if (action==='add') {
-      const item={metric:addMetric,mode:'Both'};
-      if (metrics[addMetric][2]==='exercise') item.exercise=addExercise;
-      config=overlayConfig({...config,items:[...config.items,item]});
-    } else if (action==='hide') {
-      config.items[index].hidden=!config.items[index].hidden;
-      focus=`[data-overlay-action="hide"][data-index="${Number(index)}"]`;
-    } else if (action==='remove') config.items.splice(Number(index),1);
-    else if (action==='clear') config.items=[];
+    const action=event.target.dataset.overlayAction;
+    if (action==='clear') config.items.forEach(item=>{item.hidden=true;});
     else if (action==='reset') config=overlayConfig({open:true});
     else return;
     persist();
-    draw(focus);
+    draw(action==='clear'?'[data-overlay-toggle]':'[data-overlay-action="reset"]');
   };
   draw();
 }

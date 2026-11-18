@@ -55,7 +55,7 @@ export function overlayConfig(value) {
     colors.add(color);
     next.push(row);
   }
-  return {open:value?.open===true,items:next};
+  return {open:value?.open===true,items:next,exercise:typeof value?.exercise==='string'?value.exercise:''};
 }
 
 function completedWorkouts(state) {
