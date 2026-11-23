@@ -11,6 +11,7 @@ const number = value => (typeof value === 'number' || typeof value === 'string' 
   && Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : null;
 
 export const metrics = {
+  healthScore: ['Health Activity Score','points / 100'],
   weight: ['Body weight','lb'],
   bodyFat: ['Body fat','%'],
   steps: ['Steps','steps'],
@@ -163,7 +164,7 @@ function indexedPoints(points, baseline, sparse) {
   return normalized;
 }
 
-export function buildOverlays(state, rows, domain, selections) {
+export function buildOverlays(state, rows, domain, selections, scores = []) {
   const workouts = selections.some(item=>['workouts','workoutDuration'].includes(item.metric)) ? completedWorkouts(state) : [];
   const history = new Map();
   return selections.map(item => {
@@ -174,7 +175,9 @@ export function buildOverlays(state, rows, domain, selections) {
       if (validDate(date) && date >= domain.start && date <= domain.end && number(value) !== null
         && !observed.has(date)) observed.set(date,Number(value));
     };
-    if (kind === 'exercise') {
+    if (item.metric === 'healthScore') {
+      for (const score of scores) record(score.date,score.value);
+    } else if (kind === 'exercise') {
       const key = canonicalExercise(item.exercise);
       if (!history.has(key)) history.set(key,exerciseHistory(state,item.exercise));
       for (const log of history.get(key)) record(log.date,exerciseValue(log,item.metric));
@@ -184,7 +187,9 @@ export function buildOverlays(state, rows, domain, selections) {
       for (const row of rows) record(row.date,dailyValue(row,item.metric));
     }
     const points = [...observed].sort(([a],[b])=>a.localeCompare(b)).map(([date,value])=>({date,value}));
-    const baseline = points[0] ?? null;
+    const baseline = item.metric === 'healthScore' && points[0]?.value === 0
+      ? points.find(point => point.value > 0) ?? {value:100, date:null}
+      : points[0] ?? null;
     const indexed = baseline?.value > 0 ? indexedPoints(points,baseline.value,sparse) : [];
     const issue = !baseline ? 'No observations in this range.'
       : baseline.value === 0 ? 'The first observation is zero and cannot be indexed.'

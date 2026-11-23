@@ -86,7 +86,7 @@ function nearestDateIndex(dates,day) {
 }
 
 const info = `<details class="overlay-info"><summary>How comparison works</summary>
-  <p>100 is each metric’s first valid reading within this range. An index of 105 means 5% above that metric’s baseline. Baselines can fall on different dates. A zero starting value cannot be indexed. Missing readings remain gaps.</p>
+  <p>100 is each metric’s first valid reading within this range. An index of 105 means 5% above that metric’s baseline. Baselines can fall on different dates. A zero starting value cannot be indexed. For Health Activity Score, the first positive score is the baseline when the range starts at zero. A range containing only zero scores uses the 100-point scale maximum as its reference. Missing readings remain gaps.</p>
   <p>Daily trends average observed values in the trailing seven calendar days and break at missing dates. Workout, exercise and extra-snack trends average up to three observations within 28 calendar days and break after more than 14 days without a reading. Both points and trends use the same baseline.</p>
   <p>Workout frequency counts distinct completions in the seven days ending on a workout date. Exercise overlays use the latest valid completed performance per date. Weight is the heaviest recorded set, volume sums sets with both weight and reps, and timed sets use seconds.</p>
   <p>Food logging shows the share of checkpoints recorded on days with at least one rating. Mean food ratings exclude No Snack. Nighttime eating is 1 for a rated snack and 0 for a recorded No Snack. Extra snacks are shown on dates with logged events.</p>
@@ -99,12 +99,12 @@ const groups = [
 ];
 const exerciseMetrics = Object.keys(metrics).filter(key=>metrics[key][2]==='exercise');
 
-export function bindOverlays({state,day,rows,names,range,save,esc}) {
+export function bindOverlays({state,day,rows,names,range,save,esc,scores=[]}) {
   const toggle=document.querySelector('#overlay-toggle'), panel=document.querySelector('#overlay-panel');
   if (!toggle || !panel) return;
   let config=overlayConfig(state.settings.progressionOverlay), inspectedDate=null;
   let exercise=names.includes(config.exercise)?config.exercise:names[0]??'';
-  const domain=comparisonDomain(range,day,rows,state);
+  const domain=comparisonDomain(range,day,[...rows,...scores],state);
   const opened=new Set(['daily']);
   const persist=()=>{
     config.exercise=exercise;
@@ -136,7 +136,7 @@ export function bindOverlays({state,day,rows,names,range,save,esc}) {
     if (!config.open) { panel.innerHTML=''; return; }
     controls=[];
     const active=config.items.filter(item=>!item.hidden);
-    const series=buildOverlays(state,rows,domain,active), plot=plotSeries(series,domain);
+    const series=buildOverlays(state,rows,domain,active,scores), plot=plotSeries(series,domain);
     const section=(id,title,body)=>`<details class="overlay-group" data-overlay-group="${id}" ${opened.has(id)?'open':''}><summary>${title}</summary>${body}</details>`;
     const renderGroup=([id,title,keys])=>section(id,title,keys.map(metric=>control(metric)).join(''));
     const daily=renderGroup(groups[0]), additional=groups.slice(1).map(renderGroup).join('');
@@ -159,7 +159,7 @@ export function bindOverlays({state,day,rows,names,range,save,esc}) {
         `<p class="chart-empty">${series.length?'No selected metrics can be indexed in this range.':'Turn on metrics to compare readings over the selected dates.'}</p>`}
       ${series.length?`<div class="overlay-legend" aria-label="Comparison legend">${series.map(item=>
         `<section class="overlay-legend-item"><strong><i style="--overlay-color:${color(item.color)}"></i>${esc(item.title)}</strong>
-          ${item.baseline?`<small>Baseline ${fullDate.format(dateObject(item.baseline.date))} · ${esc(original(item.baseline.value,item.unit))}</small>`:''}
+          ${item.baseline?`<small>Baseline ${item.baseline.date ? fullDate.format(dateObject(item.baseline.date)) : 'reference'} · ${esc(original(item.baseline.value,item.unit))}</small>`:''}
           ${item.issue?`<p class="muted">${item.issue}</p>`:''}</section>`).join('')}</div>`:''}
       <div class="overlay-picker">
         ${additional}
