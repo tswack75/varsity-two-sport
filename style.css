@@ -52,3 +52,4 @@
 .overlay-legend-item{min-width:0;padding:.65rem;border:1px solid #405474;border-radius:.65rem;overflow-wrap:anywhere}
 .overlay-legend i,.overlay-reading i{display:inline-block;width:.75rem;height:.75rem;margin-inline-end:.4rem;border-radius:50%;background:var(--overlay-color)}
 
+.health-score-card{margin-bottom:1rem}.health-score-card .mini-chart{display:block;max-width:320px;max-height:90px}.health-score-value{font-size:2rem;color:#f6c849}.health-score-card p{margin:.3rem 0}

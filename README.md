@@ -17,12 +17,29 @@ Use **My workouts** to create a template or adjust one workout date independentl
 
 Open **Progression → Compare / Overlay** and turn on any metrics you want to
 compare. Choose Both, Trend, or Data points next to each toggle. All active
-metrics share a calendar axis. Each series starts at index 100 on its first valid date in the selected
+metrics share a calendar axis. Each series uses index 100 for its first valid reading in the selected
 range. Its original baseline and units appear in the legend, and tapping the
 chart or using the date control shows its actual observations. A zero starting
-value is labelled as incompatible. **How comparison works** documents the
+value is labelled as incompatible for existing metrics. The Health Activity Score can use its first
+positive reading, or the scale maximum for a range of all zeros. **How comparison works** documents the
 smoothing windows and treatment of missing data. Selections and display modes
 are saved locally.
+
+The **Health Activity Score** updates as you log food, steps, active calories, and completed workouts.
+Today shows the score, weighted coverage, and a seven-day calendar chart on the same date scale as
+weight, steps, and active calories. Rules v1 assign weights of 35, 25, 20, and 20, respectively.
+Food is the average of valid ratings for meals and snacks that occurred, including extra snacks.
+Movement rewards progress up to the targets of 8,000 steps and 400 active calories.
+A completed workout earns 100 for that component. Choosing None records an explicit zero.
+Blank inputs are excluded and the remaining weights are rescaled. Coverage is the amount of
+configured weight represented by the eligible inputs.
+
+In **Progression**, the score has a 0–100 chart, normalized overlays, and a by-date breakdown below
+Food Habits. **Calibrate scoring rules** previews editable weights and suggested movement targets
+against earlier records. A movement target uses the 75th percentile of positive entries when
+there are at least seven. Approving a preview saves a new rule version for future dates.
+Older scores use the version effective on their date. Historical input corrections still update
+the affected score under its original rules. All scoring and calibration run on the device.
 
 See [exercise demonstration coverage](EXERCISE_GUIDES.md) and the [analysis and recommendations formats](FITNESS_ANALYSIS.md). The analysis export is a separate, locally generated file. Settings previews and applies only the recommendation changes you select.
 
